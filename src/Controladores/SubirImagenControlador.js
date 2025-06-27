@@ -24,6 +24,11 @@ const Servicios = {
 };
 
 const SubirImagen = async (req, res) => {
+  let RutaRelativa = "";
+  let UrlPublica = "";
+  let ImagenAnterior = ""; // para eliminar si todo sale bien
+  let EstaEditando = false;
+
   try {
     if (!req.file) {
       return res.status(400).json({ Error: "No se envió ninguna imagen" });
@@ -48,33 +53,26 @@ const SubirImagen = async (req, res) => {
       return res.status(400).json({ Error: `No hay servicio para la carpeta ${SubCarpeta}` });
     }
 
-    // === VERIFICACIÓN DE ARCHIVOS EXISTENTES ===
     const [archivos] = await Almacenamiento.getFiles({
       prefix: `${CarpetaPrincipal}/`
     });
 
-
-    // === VERIFICACIÓN DE ESPACIO (siempre aplica) ===
     let totalBytes = 0;
     for (const archivo of archivos) {
       const [metadata] = await archivo.getMetadata();
       totalBytes += Number(metadata.size || 0);
     }
 
-    // totalBytes >= 500 * 1024                  KB
-    // totalBytes >= 500 * 1024 * 1024           MB
-    // totalBytes >= 500 * 1024 * 1024 * 1024    GB
     if (totalBytes >= 950 * 1024 * 1024) {
       return res.status(400).json({
         Alerta: "El límite de almacenamiento ha sido alcanzado. No se puede subir más imágenes."
       });
     }
 
-    // === VERIFICACIÓN DE CANTIDAD (solo si agregas nueva imagen) ===
     let CuentaComoNuevaImagen = false;
 
     if (!CodigoPropio && CodigoVinculado) {
-      CuentaComoNuevaImagen = true; // creación vinculada
+      CuentaComoNuevaImagen = true;
     } else if (CodigoPropio) {
       const EntidadExistente = await Servicio.ObtenerPorCodigo(CodigoPropio);
 
@@ -83,13 +81,11 @@ const SubirImagen = async (req, res) => {
       }
 
       const ImagenActual = EntidadExistente[NombreCampoImagen];
-
       if (!ImagenActual || ImagenActual.trim() === '') {
-        CuentaComoNuevaImagen = true; // edición de registro sin imagen → cuenta como nueva
+        CuentaComoNuevaImagen = true;
       }
-      // Si ya tiene imagen → estás reemplazando, no cuenta como nueva
     } else {
-      CuentaComoNuevaImagen = true; // creación sin códigos
+      CuentaComoNuevaImagen = true;
     }
 
     if (CuentaComoNuevaImagen && archivos.length >= 250) {
@@ -98,51 +94,62 @@ const SubirImagen = async (req, res) => {
       });
     }
 
-    // === VERIFICACIÓN DE ARCHIVO SUBIDO ===
     if (!req.file) {
       return res.status(400).json({
         Alerta: "Debes subir una imagen para continuar."
       });
     }
-    // === SUBIDA DE IMAGEN Y ACTUALIZACIÓN ===
+
+    RutaRelativa = await SubirImagenAlmacenamiento(req.file, CarpetaPrincipal, SubCarpeta);
+    UrlPublica = `${process.env.URL_PUBLICA_FIREBASE}${RutaRelativa}`;
 
     let Entidad = {};
     let Datos = {};
 
-    const RutaRelativa = await SubirImagenAlmacenamiento(req.file, CarpetaPrincipal, SubCarpeta);
-    const UrlPublica = `${process.env.URL_PUBLICA_FIREBASE}${RutaRelativa}`;
-
     if (CodigoVinculado && !CodigoPropio) {
       Datos[CampoVinculado] = CodigoVinculado;
       Datos[NombreCampoImagen] = RutaRelativa;
+      // throw new Error("Error intencional en edición para prueba"); // para probar el catch
       Entidad = await Servicio.Crear(Datos);
+
     } else if (!CodigoVinculado && CodigoPropio) {
+      EstaEditando = true;
       Datos[CampoPropio] = CodigoPropio;
       const EntidadExistente = await Servicio.ObtenerPorCodigo(CodigoPropio);
 
       if (EntidadExistente && EntidadExistente[NombreCampoImagen]) {
-        // await EliminarImagen(`${process.env.URL_PUBLICA_FIREBASE}${EntidadExistente[NombreCampoImagen]}`);
-          await EliminarImagen(EntidadExistente[NombreCampoImagen]);
+        ImagenAnterior = EntidadExistente[NombreCampoImagen]; // solo si hay una existente
       }
 
       Datos[NombreCampoImagen] = RutaRelativa;
+      // throw new Error("Error intencional en edición para prueba"); // para probar el catch
       Entidad = await Servicio.Editar(CodigoPropio, Datos);
+
     } else if (CodigoVinculado && CodigoPropio) {
+      EstaEditando = true;
       Datos[CampoVinculado] = CodigoVinculado;
       Datos[CampoPropio] = CodigoPropio;
 
       const EntidadExistente = await Servicio.ObtenerPorCodigo(CodigoPropio);
 
       if (EntidadExistente && EntidadExistente[NombreCampoImagen]) {
-        // await EliminarImagen(`${process.env.URL_PUBLICA_FIREBASE}${EntidadExistente[NombreCampoImagen]}`);
-          await EliminarImagen(EntidadExistente[NombreCampoImagen]);
+        ImagenAnterior = EntidadExistente[NombreCampoImagen];
       }
 
       Datos[NombreCampoImagen] = RutaRelativa;
+      // throw new Error("Error intencional en edición para prueba"); // para probar el catch
       Entidad = await Servicio.Editar(CodigoPropio, Datos);
+
     } else {
       Datos[NombreCampoImagen] = RutaRelativa;
+      // throw new Error("Error intencional en edición para prueba"); // para probar el catch
       Entidad = await Servicio.Crear(Datos);
+    }
+
+    // === SI LLEGA HASTA AQUÍ, LA EDICIÓN FUE EXITOSA Y PODEMOS BORRAR LA ANTERIOR ===
+    if (EstaEditando && ImagenAnterior) {
+      await EliminarImagen(ImagenAnterior);
+      console.log("Imagen anterior eliminada correctamente:", ImagenAnterior);
     }
 
     if (Entidad && Entidad[NombreCampoImagen]) {
@@ -154,7 +161,17 @@ const SubirImagen = async (req, res) => {
       Entidad,
       UrlImagenPublica: UrlPublica
     });
+
   } catch (error) {
+    if (UrlPublica) {
+      try {
+        console.log("Intentando eliminar imagen nueva tras error:", UrlPublica);
+        await EliminarImagen(UrlPublica);
+      } catch (errEliminar) {
+        console.error("Error eliminando imagen subida tras fallo:", errEliminar.message);
+      }
+    }
+
     return ManejarError(error, res, "Error al procesar la imagen");
   }
 };
