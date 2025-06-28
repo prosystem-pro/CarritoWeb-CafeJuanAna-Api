@@ -152,9 +152,9 @@ const SubirImagen = async (req, res) => {
       console.log("Imagen anterior eliminada correctamente:", ImagenAnterior);
     }
 
-    if (Entidad && Entidad[NombreCampoImagen]) {
-      Entidad[NombreCampoImagen] = ConstruirUrlImagen(Entidad[NombreCampoImagen]);
-    }
+    // if (Entidad && Entidad[NombreCampoImagen]) {
+    //   Entidad[NombreCampoImagen] = ConstruirUrlImagen(Entidad[NombreCampoImagen]);
+    // }
 
     return res.status(201).json({
       Mensaje: `${SubCarpeta} procesado con éxito`,
