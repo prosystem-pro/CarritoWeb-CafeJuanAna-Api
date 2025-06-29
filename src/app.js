@@ -38,6 +38,7 @@ const CuerpoJson = require('./FuncionIntermedia/CuerpoJson');
 const CuerpoUrlCodificado = require('./FuncionIntermedia/CuerpoUrlCodificado');
 const { ConfiguracionCors } = require('./FuncionIntermedia/Cors');
 
+App.use(Express.text({ type: 'text/plain' }));
 App.use(ConfiguracionCors());
 App.use(CuerpoJson);
 App.use(CuerpoUrlCodificado);
