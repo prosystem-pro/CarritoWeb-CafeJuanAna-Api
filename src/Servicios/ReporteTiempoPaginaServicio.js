@@ -104,7 +104,6 @@ const Crear = async (Datos) => {
     ...Datos,
     Fecha: FechaActual,
   };
-
   return await Modelo.create(DatosConFecha);
 };
 
