@@ -47,14 +47,24 @@ const Buscar = async (TipoBusqueda, ValorBusqueda) => {
 };
 
 const Crear = async (Datos) => {
-  return await Modelo.create(Datos);
+  const Registro = await Modelo.create(Datos);
+
+  const Dato = Registro.toJSON();
+  Dato.UrlImagen = ConstruirUrlImagen(Dato.UrlImagen); 
+  return Dato;
 };
+
 
 const Editar = async (Codigo, Datos) => {
   const Objeto = await Modelo.findOne({ where: { [CodigoModelo]: Codigo } });
   if (!Objeto) return null;
+
   await Objeto.update(Datos);
-  return Objeto;
+  
+  const Dato = Objeto.toJSON(); // Convertimos el modelo a objeto JS plano
+  Dato.UrlImagen = ConstruirUrlImagen(Dato.UrlImagen); // Construimos la URL como en ObtenerPorCodigo
+
+  return Dato;
 };
 
 const Eliminar = async (Codigo) => {
