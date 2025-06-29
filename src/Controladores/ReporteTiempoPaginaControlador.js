@@ -52,24 +52,33 @@ const Crear = async (req, res) => {
       ? req.body.map(dato => ({ ...dato, DireccionIp: ip }))
       : { ...req.body, DireccionIp: ip };
 
-    await Servicio.Crear(datosConIp);
-    return res.status(201).json({ message: 'Se guardó el registro exitosamente.' });
+    // Aquí capturamos el objeto creado
+    const nuevoRegistro = await Servicio.Crear(datosConIp);
+
+    // Retornamos el objeto completo (o el primer elemento si es array)
+    if (Array.isArray(nuevoRegistro)) {
+      return res.status(201).json(nuevoRegistro[0]);
+    } else {
+      return res.status(201).json(nuevoRegistro);
+    }
   } catch (error) {
     return ManejarError(error, res, 'Error al crear el registro');
   }
 };
-
 
 const Editar = async (req, res) => {
   try {
     const { Codigo } = req.params;
     const Objeto = await Servicio.Editar(Codigo, req.body);
     if (!Objeto) return res.status(404).json({ message: 'Registro no encontrado' });
-    return res.status(200).json({ message: 'Se actualizó el registro exitosamente.' });
+
+    // Retornamos el objeto actualizado
+    return res.status(200).json(Objeto);
   } catch (error) {
     return ManejarError(error, res, 'Error al actualizar el registro');
   }
 };
+
 
 const Eliminar = async (req, res) => {
   try {

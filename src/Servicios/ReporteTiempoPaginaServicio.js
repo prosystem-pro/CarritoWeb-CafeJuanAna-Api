@@ -104,7 +104,7 @@ const Crear = async (Datos) => {
     ...Datos,
     Fecha: FechaActual,
   };
-  console.log('Datos crear tiempo de pagina',DatosConFecha);
+
   return await Modelo.create(DatosConFecha);
 };
 
