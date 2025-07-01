@@ -8,7 +8,15 @@ const NombreModelo= 'Color';
 const CodigoModelo= 'CodigoLoginPortada'
 
 const Listado = async () => {
-  return await Modelo.findAll({ where: { Estatus:  [1,2] } });
+  const Registros = await Modelo.findAll({ where: { Estatus: [1, 2] } });
+
+  const Resultado = Registros.map(r => {
+    const Dato = r.toJSON();
+    Dato.UrlImagen = ConstruirUrlImagen(Dato.UrlImagen);
+    return Dato;
+  });
+
+  return Resultado;
 };
 
 const ObtenerPorCodigo = async (Codigo) => {
