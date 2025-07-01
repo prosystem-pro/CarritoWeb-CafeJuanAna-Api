@@ -14,18 +14,21 @@ const ObtenerResumen = async (Anio, Mes) => {
   });
 
   // Convertir fechas a zona horaria local (opcional, solo para el filtro)
-  const RegistrosConFechaLocal = Registros.map(Registro => {
-    const RegistroPlano = Registro.toJSON();
-    if (RegistroPlano.Fecha) {
-      const fecha = new Date(RegistroPlano.Fecha);
-      RegistroPlano.Fecha = {
-        year: fecha.getFullYear(),
-        month: fecha.getMonth() + 1,
-        day: fecha.getDate()
-      };
-    }
-    return RegistroPlano;
-  });
+const RegistrosConFechaLocal = Registros.map(Registro => {
+  const RegistroPlano = Registro.toJSON();
+  if (RegistroPlano.Fecha) {
+    const fechaLuxon = DateTime
+      .fromJSDate(new Date(RegistroPlano.Fecha))
+      .setZone('America/Guatemala');
+
+    RegistroPlano.Fecha = {
+      year: fechaLuxon.year,
+      month: fechaLuxon.month,
+      day: fechaLuxon.day
+    };
+  }
+  return RegistroPlano;
+});
 
   // Filtrar por año y mes
   const RegistrosFiltrados = (Anio && Mes)
@@ -72,9 +75,6 @@ const ObtenerResumen = async (Anio, Mes) => {
   };
 };
 
-module.exports = {
-  ObtenerResumen
-};
 
 const Listado = async () => {
   return await Modelo.findAll({ where: { Estatus: [1, 2] } });
