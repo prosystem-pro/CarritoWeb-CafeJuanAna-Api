@@ -12,7 +12,11 @@ const Listado = async () => {
 
   const Resultado = Registros.map(r => {
     const Dato = r.toJSON();
-    Dato.UrlImagen = ConstruirUrlImagen(Dato.UrlImagen);
+
+    Dato.UrlImagenPortada = ConstruirUrlImagen(Dato.UrlImagenPortada);
+    Dato.UrlImagenDecorativaIzquierda = ConstruirUrlImagen(Dato.UrlImagenDecorativaIzquierda);
+    Dato.UrlImagenDecorativaDerecha = ConstruirUrlImagen(Dato.UrlImagenDecorativaDerecha);
+
     return Dato;
   });
 
