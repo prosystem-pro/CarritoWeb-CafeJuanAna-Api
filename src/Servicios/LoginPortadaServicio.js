@@ -24,7 +24,16 @@ const Listado = async () => {
 };
 
 const ObtenerPorCodigo = async (Codigo) => {
-  return await Modelo.findOne({ where: { [CodigoModelo]: Codigo } });
+  const Objeto = await Modelo.findOne({ where: { [CodigoModelo]: Codigo } });
+  if (!Objeto) return null;
+
+  const Dato = Objeto.toJSON();
+
+  Dato.UrlImagenPortada = ConstruirUrlImagen(Dato.UrlImagenPortada);
+  Dato.UrlImagenDecorativaIzquierda = ConstruirUrlImagen(Dato.UrlImagenDecorativaIzquierda);
+  Dato.UrlImagenDecorativaDerecha = ConstruirUrlImagen(Dato.UrlImagenDecorativaDerecha);
+
+  return Dato;
 };
 
 const Buscar = async (TipoBusqueda, ValorBusqueda) => {
@@ -41,14 +50,29 @@ const Buscar = async (TipoBusqueda, ValorBusqueda) => {
 };
 
 const Crear = async (Datos) => {
-  return await Modelo.create(Datos);
+  const Nuevo = await Modelo.create(Datos);
+  const Dato = Nuevo.toJSON();
+
+  Dato.UrlImagenPortada = ConstruirUrlImagen(Dato.UrlImagenPortada);
+  Dato.UrlImagenDecorativaIzquierda = ConstruirUrlImagen(Dato.UrlImagenDecorativaIzquierda);
+  Dato.UrlImagenDecorativaDerecha = ConstruirUrlImagen(Dato.UrlImagenDecorativaDerecha);
+
+  return Dato;
 };
 
 const Editar = async (Codigo, Datos) => {
   const Objeto = await Modelo.findOne({ where: { [CodigoModelo]: Codigo } });
   if (!Objeto) return null;
+
   await Objeto.update(Datos);
-  return Objeto;
+
+  const Dato = Objeto.toJSON();
+
+  Dato.UrlImagenPortada = ConstruirUrlImagen(Dato.UrlImagenPortada);
+  Dato.UrlImagenDecorativaIzquierda = ConstruirUrlImagen(Dato.UrlImagenDecorativaIzquierda);
+  Dato.UrlImagenDecorativaDerecha = ConstruirUrlImagen(Dato.UrlImagenDecorativaDerecha);
+
+  return Dato;
 };
 
 const Eliminar = async (Codigo) => {
