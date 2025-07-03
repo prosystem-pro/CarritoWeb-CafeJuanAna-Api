@@ -23,7 +23,7 @@ module.exports = function(sequelize, DataTypes) {
     },
     UrlImagen: {
       type: DataTypes.STRING(256),
-      allowNull: false
+      allowNull: true
     },
     Estatus: {
       type: DataTypes.TINYINT,
